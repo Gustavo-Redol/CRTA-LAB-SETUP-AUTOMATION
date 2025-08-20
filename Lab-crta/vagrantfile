@@ -1,0 +1,71 @@
+Vagrant.configure("2") do |config|
+
+  # --------------------------
+  # Domain Controller (rede interna)
+  # --------------------------
+  config.vm.define "dc" do |dc|
+    dc.vm.box = "jborean93/WindowsServer2016"
+    dc.vm.hostname = "DomainController"
+    dc.vm.network "private_network", ip: "192.168.56.2", adapter: 2
+    dc.vm.provision "shell", path: "scripts/setup-dc.ps1"
+  end
+
+  # --------------------------
+  # Employee Workstation (rede interna)
+  # --------------------------
+  config.vm.define "employee" do |employee|
+    employee.vm.box = "gusztavvargadr/windows-10"
+    employee.vm.hostname = "EmployeePC"
+    employee.vm.network "private_network", ip: "192.168.56.3", adapter: 2
+    employee.vm.provision "shell", path: "scripts/setup-employee.ps1"
+  end
+
+  # --------------------------
+  # Application Server (rede interna)
+  # --------------------------
+  config.vm.define "appserver" do |appserver|
+    appserver.vm.box = "noordev/metasploitable3"
+    appserver.vm.box_version = "1"
+    appserver.vm.hostname = "AppServer"
+    appserver.vm.network "private_network", ip: "192.168.56.4", adapter: 2
+    appserver.ssh.insert_key = false
+    appserver.ssh.username = "vagrant"
+    appserver.ssh.password = "vagrant"
+  end
+
+  # --------------------------
+  # Web Server (rede interna + externa)
+  # --------------------------
+config.vm.define "webserver" do |webserver|
+  webserver.vm.box = "RedHatAugust/Metasploitable-2"
+  webserver.vm.hostname = "WebServer"
+
+  # Rede interna
+  webserver.vm.network "private_network", ip: "192.168.56.5", adapter: 2
+  # Rede externa
+  webserver.vm.network "private_network", ip: "172.16.1.2", adapter: 3
+
+  # Desativa o SSH e provisionamento do Vagrant
+  webserver.ssh.insert_key = false
+  webserver.ssh.username = nil
+  webserver.ssh.password = nil
+  webserver.vm.provision "shell", inline: "echo 'Nenhum provisionamento necessário'"  # Apenas para satisfazer o Vagrant
+end
+
+
+
+  # --------------------------
+  # Kali Attacker (rede externa apenas)
+  # --------------------------
+  config.vm.define "kali" do |kali|
+    kali.vm.box = "kalilinux/rolling"
+    kali.vm.hostname = "Kali"
+
+    # Apenas rede externa
+    kali.vm.network "private_network", ip: "172.16.1.3", adapter: 2
+
+    kali.vm.provision "shell", path: "scripts/setup-kali.sh"
+  end
+
+end
+
